@@ -63,3 +63,27 @@ def test_chain_multiple_operations() -> None:
     )
     result = list(chain(iter([1, 2, 3])))
     assert result == [4, 8]
+
+
+def test_chain_map() -> None:
+    def add_one(value: int) -> int:
+        return value + 1
+
+    chain = Chain[int, int].start().map(add_one)
+    result = list(chain(iter([1, 2, 3])))
+    assert result == [2, 3, 4]
+
+
+def test_chain_map_changing_types() -> None:
+    chain: Chain[int, str] = Chain[int, int].start().map(str)
+    result = list(chain(iter([1, 2, 3])))
+    assert result == ["1", "2", "3"]
+
+
+def test_chain_map_tuple() -> None:
+    def add_values(values: tuple[int, ...]) -> int:
+        return sum(values)
+
+    chain = Chain[int, int].start().map_tuple(add_values, 2)
+    result = list(chain(iter([1, 2, 3])))
+    assert result == [3, 3]
