@@ -11,5 +11,5 @@ def take_next(iterator: Iterator[T]) -> Optional[T]:
         return None
 
 
-def take_up_to_n(iterator: Iterator[T], n: int) -> Tuple[T, ...]:
+def take_up_to_n(iterator: Iterator[T], n: Optional[int]) -> Tuple[T, ...]:
     return tuple(islice(iterator, n))
