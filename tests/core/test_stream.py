@@ -12,8 +12,10 @@ def test_stream_to_list() -> None:
 def test_stream_on_range() -> None:
     stream = StreamStart(range(3))
     result = stream.to_list()
-    print(stream.get_counts())
     assert result == [0, 1, 2]
+    assert stream.get_counts() == [
+        {"name": "_identity", "inputs": 3, "outputs": 3},
+    ]
 
 
 def test_repeated_stream() -> None:

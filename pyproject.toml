@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pipedata"
-version = "0.0.1"
+version = "0.1"
 description = "Framework for building pipelines for data processing"
 authors = ["Simon Wicks <simw@users.noreply.github.com>"]
 readme = "README.md"
@@ -35,16 +35,35 @@ packages = [{include = "pipedata", from = "src"}]
 [tool.poetry.dependencies]
 python = "^3.8"
 
+[tool.poetry.group.ops.dependencies]
+fsspec = [
+    { version = ">=0.9.0", python = "<3.12" },
+    { version = ">=2022.1.0", python = ">=3.12,<3.13"},
+]
+ijson = "^3.0.0"
+pyarrow = [
+    { version = ">=9.0.0", python = "<3.11" },
+    { version = ">=11.0.0", python = ">=3.11,<3.12" },
+    { version = ">=14.0.0", python = ">=3.12,<=3.13" },
+]
+# We don't have a direct numpy dependency, but pyarrow depends on numpy
+# and numpy has python version constraints with python 3.12
+numpy = [
+    { version = "<1.25.0", python = "<3.9" },
+    { version = "^1.26.0", python = ">=3.12,<3.13" }
+]
 
 [tool.poetry.group.lint.dependencies]
 black = "^23.9.1"
 ruff = "^0.1.3"
 mypy = "^1.6.0"
 
-
 [tool.poetry.group.test.dependencies]
 pytest = "^7.4.2"
 coverage = "^7.3.2"
+
+[tool.poetry.group.ops]
+optional = true
 
 
 [tool.mypy]
@@ -103,7 +122,9 @@ keep-runtime-typing = true
 testpaths = "tests"
 xfail_strict = true
 filterwarnings = [
-    "error"
+    "error",
+    "ignore:distutils Version classes:DeprecationWarning",
+    "ignore:SelectableGroups dict:DeprecationWarning",
 ]
 
 

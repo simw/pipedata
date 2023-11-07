@@ -4,7 +4,7 @@ sources = src tests
 
 .PHONY: prepare
 prepare:
-	poetry install
+	poetry install --with ops
 
 
 .PHONY: lintable
@@ -21,11 +21,33 @@ lint: prepare
 	poetry run mypy $(sources)
 
 
-
 .PHONY: test
 test: prepare
 	poetry run coverage run -m pytest
 	poetry run coverage report
+
+
+.PHONY: test-python-versions
+test-python-versions:
+	poetry env use python3.8
+	make test
+
+	poetry env use python3.9
+	make test
+
+	poetry env use python3.10
+	make test
+
+	poetry env use python3.11
+	make test
+
+	poetry env use python3.12
+	make test
+
+
+.PHONY: test-dep-versions
+test-dep-versions: prepare
+	./scripts/test_dependency_versions.sh
 
 
 .PHONY: clean
