@@ -1,28 +1,50 @@
 from typing import Iterable, Iterator, List
 
-from pipedata.core import Chain, start_stream
+from pipedata.core import ChainStart, StreamStart
 from pipedata.core.itertools import take_next, take_up_to_n
 
 
 def test_stream_to_list() -> None:
-    result = start_stream([1, 2, 3]).to_list()
+    result = StreamStart([1, 2, 3]).to_list()
     assert result == [1, 2, 3]
 
 
-def test_stream_with_a_chain() -> None:
-    chain = Chain[int, int].start().filter(lambda x: x % 2 == 0)
+def test_repeated_stream() -> None:
+    stream = StreamStart([1, 2, 3])
+    result1 = stream.to_list()
+    assert result1 == [1, 2, 3]
 
-    result = start_stream([1, 2, 3]).flat_map(chain).to_list()
+    # Note: the stream is already exhausted
+    result2 = stream.to_list()
+    assert result2 == []
+
+
+def test_stream_is_iterable() -> None:
+    stream = StreamStart([1, 2, 3])
+    result = list(stream)
+    assert result == [1, 2, 3]
+
+    stream2 = StreamStart([2, 3, 4])
+    result2 = []
+    for element in stream2:
+        result2.append(element)  # noqa: PERF402
+    assert result2 == [2, 3, 4]
+
+
+def test_stream_with_a_chain() -> None:
+    chain = ChainStart[int]().filter(lambda x: x % 2 == 0)
+
+    result = StreamStart([1, 2, 3]).flat_map(chain).to_list()
     assert result == [2]
 
 
 def test_stream_to_list_smaller_length() -> None:
-    result = start_stream([1, 2, 3]).to_list(2)
+    result = StreamStart([1, 2, 3]).to_list(2)
     assert result == [1, 2]
 
 
 def test_stream_to_list_longer_length() -> None:
-    result = start_stream([1, 2, 3]).to_list(4)
+    result = StreamStart([1, 2, 3]).to_list(4)
     assert result == [1, 2, 3]
 
 
@@ -30,7 +52,7 @@ def test_stream_filter() -> None:
     def is_even(value: int) -> bool:
         return value % 2 == 0
 
-    result = start_stream([1, 2, 3, 4, 5]).filter(is_even).to_list()
+    result = StreamStart([1, 2, 3, 4, 5]).filter(is_even).to_list()
     assert result == [2, 4]
 
 
@@ -38,7 +60,7 @@ def test_stream_filter_with_none_passing() -> None:
     def is_even(value: int) -> bool:
         return value % 2 == 0
 
-    result = start_stream([1, 3, 5]).filter(is_even).to_list()
+    result = StreamStart([1, 3, 5]).filter(is_even).to_list()
     assert result == []
 
 
@@ -47,7 +69,7 @@ def test_stream_flat_map_identity() -> None:
         while element := take_next(input_iterator):
             yield element
 
-    result = start_stream([1, 2, 3]).flat_map(identity).to_list()
+    result = StreamStart([1, 2, 3]).flat_map(identity).to_list()
     assert result == [1, 2, 3]
 
 
@@ -60,7 +82,7 @@ def test_stream_flat_map_chain() -> None:
         while element := take_next(input_iterator):
             yield element * 2
 
-    result = start_stream([1, 2, 3]).flat_map(add_one).flat_map(multiply_two).to_list()
+    result = StreamStart([1, 2, 3]).flat_map(add_one).flat_map(multiply_two).to_list()
     assert result == [4, 6, 8]
 
 
@@ -70,7 +92,7 @@ def test_stream_flat_map_growing() -> None:
             yield element
             yield element + 1
 
-    result = start_stream([1, 2, 3]).flat_map(add_element).to_list()
+    result = StreamStart([1, 2, 3]).flat_map(add_element).to_list()
     assert result == [1, 2, 2, 3, 3, 4]
 
 
@@ -79,7 +101,7 @@ def test_stream_flat_map_shrinking() -> None:
         while batch := take_up_to_n(input_iterator, 2):
             yield sum(batch)
 
-    result = start_stream([1, 2, 3]).flat_map(add_two_values).to_list()
+    result = StreamStart([1, 2, 3]).flat_map(add_two_values).to_list()
     assert result == [3, 3]
 
 
@@ -87,7 +109,7 @@ def test_stream_map() -> None:
     def add_one(value: int) -> int:
         return value + 1
 
-    result = start_stream([1, 2, 3]).map(add_one).to_list()
+    result = StreamStart([1, 2, 3]).map(add_one).to_list()
     assert result == [2, 3, 4]
 
 
@@ -95,7 +117,7 @@ def test_stream_reduce_adding() -> None:
     def add_values(a: int, b: int) -> int:
         return a + b
 
-    result = start_stream([1, 2, 3]).reduce(add_values)
+    result = StreamStart([1, 2, 3]).reduce(add_values)
     expected = 6
     assert result == expected
 
@@ -106,7 +128,7 @@ def test_stream_reduce_appending() -> None:
         return a
 
     initializer: List[int] = []
-    result = start_stream([1, 2, 3]).reduce(append_values, initializer)
+    result = StreamStart([1, 2, 3]).reduce(append_values, initializer)
     assert result == [1, 2, 3]
 
 
@@ -114,5 +136,5 @@ def test_stream_map_tuple() -> None:
     def add_values(values: Iterable[int]) -> int:
         return sum(values)
 
-    result = start_stream([1, 2, 3]).map_tuple(add_values, 2).to_list()
+    result = StreamStart([1, 2, 3]).map_tuple(add_values, 2).to_list()
     assert result == [3, 3]

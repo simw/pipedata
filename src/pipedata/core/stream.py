@@ -13,7 +13,7 @@ from typing import (
     overload,
 )
 
-from .chain import Chain
+from .chain import Chain, ChainStart
 
 TStart = TypeVar("TStart")
 TEnd = TypeVar("TEnd")
@@ -70,6 +70,6 @@ class Stream(Iterable[TEnd]):
         return list(itertools.islice(self, stop))
 
 
-def start_stream(items: Iterable[TStart]) -> Stream[TStart]:
-    chain = Chain[TStart, TStart].start()
-    return Stream(items, chain)
+class StreamStart(Stream[TEnd]):
+    def __init__(self, items: Iterable[TEnd]) -> None:
+        super().__init__(items, ChainStart[TEnd]())
