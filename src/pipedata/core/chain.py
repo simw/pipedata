@@ -24,7 +24,7 @@ TOther = TypeVar("TOther")
 
 
 def _identity(input_iterator: Iterator[TEnd]) -> Iterator[TEnd]:
-    while element := take_next(input_iterator):
+    while (element := take_next(input_iterator)) is not None:
         yield element
 
 
@@ -133,7 +133,7 @@ class Chain(Generic[TStart, TEnd]):
         """
 
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TEnd]:
-            while element := take_next(previous_step):
+            while (element := take_next(previous_step)) is not None:
                 if func(element) is True:
                     yield element
 
@@ -148,7 +148,7 @@ class Chain(Generic[TStart, TEnd]):
         """
 
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
-            while element := take_next(previous_step):
+            while (element := take_next(previous_step)) is not None:
                 yield func(element)
 
         new_action.__name__ = func.__name__

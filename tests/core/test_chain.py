@@ -1,18 +1,23 @@
-from typing import Iterator
+from typing import Iterator, Tuple
 
 from pipedata.core import Chain, ChainStart
 from pipedata.core.itertools import take_next
 
 
 def test_chain() -> None:
+    """
+    Note: it's important to use a 'falsey' type in the chain as well,
+    to check that terminations are explicitly checking for None rather
+    than a false value.
+    """
     chain = ChainStart[int]()
-    result = list(chain(iter([1, 2, 3])))
-    assert result == [1, 2, 3]
+    result = list(chain(iter([0, 1, 2, 3])))
+    assert result == [0, 1, 2, 3]
     assert chain.get_counts() == [
         {
             "name": "_identity",
-            "inputs": 3,
-            "outputs": 3,
+            "inputs": 4,
+            "outputs": 4,
         },
     ]
 
@@ -39,18 +44,18 @@ def test_chain_filter() -> None:
 
     chain = ChainStart[int]().filter(is_even)
 
-    result = list(chain(iter([1, 2, 3])))
-    assert result == [2]
+    result = list(chain(iter([0, 1, 2, 3])))
+    assert result == [0, 2]
     assert chain.get_counts() == [
         {
             "name": "_identity",
-            "inputs": 3,
-            "outputs": 3,
+            "inputs": 4,
+            "outputs": 4,
         },
         {
             "name": "is_even",
-            "inputs": 3,
-            "outputs": 1,
+            "inputs": 4,
+            "outputs": 2,
         },
     ]
 
@@ -81,13 +86,13 @@ def test_chain_filter_with_none_passing() -> None:
 
 def test_chain_flat_map() -> None:
     def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
-        while element := take_next(input_iterator):
+        while (element := take_next(input_iterator)) is not None:
             yield element + 1
 
     chain = ChainStart[int]().flat_map(add_one)
 
-    result = list(chain(iter([1, 2, 3])))
-    assert result == [2, 3, 4]
+    result = list(chain(iter([0, 1, 2, 3])))
+    assert result == [1, 2, 3, 4]
 
     result2 = list(chain(iter([2, 3, 4])))
     assert result2 == [3, 4, 5]
@@ -95,33 +100,33 @@ def test_chain_flat_map() -> None:
 
 def test_chain_multiple_operations() -> None:
     def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
-        while element := take_next(input_iterator):
+        while (element := take_next(input_iterator)) is not None:
             yield element + 1
 
     def multiply_two(input_iterator: Iterator[int]) -> Iterator[int]:
-        while element := take_next(input_iterator):
+        while (element := take_next(input_iterator)) is not None:
             yield element * 2
 
     def is_even(value: int) -> bool:
         return value % 2 == 0
 
     chain = ChainStart[int]().flat_map(add_one).filter(is_even).flat_map(multiply_two)
-    result = list(chain(iter([1, 2, 3])))
+    result = list(chain(iter([0, 1, 2, 3])))
     assert result == [4, 8]
     assert chain.get_counts() == [
         {
             "name": "_identity",
-            "inputs": 3,
-            "outputs": 3,
+            "inputs": 4,
+            "outputs": 4,
         },
         {
             "name": "add_one",
-            "inputs": 3,
-            "outputs": 3,
+            "inputs": 4,
+            "outputs": 4,
         },
         {
             "name": "is_even",
-            "inputs": 3,
+            "inputs": 4,
             "outputs": 2,
         },
         {
@@ -137,32 +142,32 @@ def test_chain_map() -> None:
         return value + 1
 
     chain = ChainStart[int]().map(add_one)
-    result = list(chain(iter([1, 2, 3])))
-    assert result == [2, 3, 4]
+    result = list(chain(iter([0, 1, 2, 3])))
+    assert result == [1, 2, 3, 4]
 
 
 def test_chain_map_changing_types() -> None:
     chain: Chain[int, str] = ChainStart[int]().map(str)
-    result = list(chain(iter([1, 2, 3])))
-    assert result == ["1", "2", "3"]
+    result = list(chain(iter([0, 1, 2, 3])))
+    assert result == ["0", "1", "2", "3"]
 
 
 def test_chain_map_tuple() -> None:
-    def add_values(values: tuple[int, ...]) -> int:
+    def add_values(values: Tuple[int, ...]) -> int:
         return sum(values)
 
     chain = ChainStart[int]().map_tuple(add_values, 2)
-    result = list(chain(iter([1, 2, 3])))
-    assert result == [3, 3]
+    result = list(chain(iter([0, 1, 2, 3, 4])))
+    assert result == [1, 5, 4]
     assert chain.get_counts() == [
         {
             "name": "_identity",
-            "inputs": 3,
-            "outputs": 3,
+            "inputs": 5,
+            "outputs": 5,
         },
         {
             "name": "add_values",
-            "inputs": 3,
-            "outputs": 2,
+            "inputs": 5,
+            "outputs": 3,
         },
     ]

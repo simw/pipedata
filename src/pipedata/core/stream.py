@@ -3,7 +3,9 @@ from __future__ import annotations
 import functools
 import itertools
 from typing import (
+    Any,
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -68,6 +70,9 @@ class Stream(Iterable[TEnd]):
         stop: Optional[int] = None,
     ) -> List[TEnd]:
         return list(itertools.islice(self, stop))
+
+    def get_counts(self) -> List[Dict[str, Any]]:
+        return self._chain.get_counts()
 
 
 class StreamStart(Stream[TEnd]):
