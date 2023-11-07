@@ -23,7 +23,7 @@ result = (
     StreamStart(range(10))
     .filter(lambda x: x % 2 == 0)
     .map(lambda x: x ^ 2)
-    .map_tuple(lambda x: x, 2)
+    .batched_map(lambda x: x, 2)
     .to_list()
 )
 print(result)
@@ -40,7 +40,7 @@ chain = (
     ChainStart()
     .filter(lambda x: x % 2 == 0)
     .map(lambda x: x ^ 2)
-    .map_tuple(lambda x: sum(x), 2)
+    .batched_map(lambda x: sum(x), 2)
 )
 print(Stream(range(10), chain).to_list())
 #> [2, 10, 10]

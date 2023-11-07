@@ -45,10 +45,10 @@ class Stream(Iterable[TEnd]):
     def map(self, func: Callable[[TEnd], TNewEnd]) -> Stream[TNewEnd]:  # noqa: A003
         return Stream(self._items, self._chain.map(func))
 
-    def map_tuple(
+    def batched_map(
         self, func: Callable[[Tuple[TEnd, ...]], TNewEnd], n: Optional[int] = None
     ) -> Stream[TNewEnd]:
-        return Stream(self._items, self._chain.map_tuple(func, n))
+        return Stream(self._items, self._chain.batched_map(func, n))
 
     @overload
     def reduce(self, func: Callable[[TEnd, TEnd], TEnd]) -> TEnd:

@@ -148,9 +148,9 @@ def test_stream_reduce_appending() -> None:
     assert result == [0, 1, 2, 3]
 
 
-def test_stream_map_tuple() -> None:
+def test_stream_batched_map() -> None:
     def add_values(values: Iterable[int]) -> int:
         return sum(values)
 
-    result = StreamStart([0, 1, 2, 3, 4]).map_tuple(add_values, 2).to_list()
+    result = StreamStart([0, 1, 2, 3, 4]).batched_map(add_values, 2).to_list()
     assert result == [1, 5, 4]

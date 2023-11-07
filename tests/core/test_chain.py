@@ -151,11 +151,11 @@ def test_chain_map_changing_types() -> None:
     assert result == ["0", "1", "2", "3"]
 
 
-def test_chain_map_tuple() -> None:
+def test_chain_batched_map() -> None:
     def add_values(values: Tuple[int, ...]) -> int:
         return sum(values)
 
-    chain = ChainStart[int]().map_tuple(add_values, 2)
+    chain = ChainStart[int]().batched_map(add_values, 2)
     result = list(chain(iter([0, 1, 2, 3, 4])))
     assert result == [1, 5, 4]
     assert chain.get_counts() == [
