@@ -3,7 +3,9 @@ from __future__ import annotations
 import functools
 import itertools
 from typing import (
+    Any,
     Callable,
+    Dict,
     Iterable,
     Iterator,
     List,
@@ -13,7 +15,7 @@ from typing import (
     overload,
 )
 
-from .chain import Chain
+from .chain import Chain, ChainStart
 
 TStart = TypeVar("TStart")
 TEnd = TypeVar("TEnd")
@@ -69,7 +71,10 @@ class Stream(Iterable[TEnd]):
     ) -> List[TEnd]:
         return list(itertools.islice(self, stop))
 
+    def get_counts(self) -> List[Dict[str, Any]]:
+        return self._chain.get_counts()
 
-def start_stream(items: Iterable[TStart]) -> Stream[TStart]:
-    chain = Chain[TStart, TStart].start()
-    return Stream(items, chain)
+
+class StreamStart(Stream[TEnd]):
+    def __init__(self, items: Iterable[TEnd]) -> None:
+        super().__init__(items, ChainStart[TEnd]())
