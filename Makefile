@@ -47,20 +47,7 @@ test-python-versions:
 
 .PHONY: test-dep-versions
 test-dep-versions: prepare
-	poetry run pip install pyarrow==9.0.0
-	poetry run python -m pytest
-
-	poetry run pip install pyarrow==13.0.0
-	poetry run python -m pytest
-
-	poetry run pip install pyarrow==14.0.0
-	poetry run python -m pytest
-
-	poetry run pip install ijson==3.0.0
-	poetry run python -m pytest
-
-	poetry run pip install fsspec==0.9.0
-	poetry run python -m pytest
+	./scripts/test_dependency_versions.sh
 
 
 .PHONY: clean
