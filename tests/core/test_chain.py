@@ -1,7 +1,6 @@
 from typing import Iterator, Tuple
 
 from pipedata.core import Chain, ChainStart
-from pipedata.core.itertools import take_next
 
 
 def test_chain() -> None:
@@ -86,7 +85,7 @@ def test_chain_filter_with_none_passing() -> None:
 
 def test_chain_flat_map() -> None:
     def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
-        while (element := take_next(input_iterator)) is not None:
+        for element in input_iterator:
             yield element + 1
 
     chain = ChainStart[int]().flat_map(add_one)
@@ -100,11 +99,11 @@ def test_chain_flat_map() -> None:
 
 def test_chain_multiple_operations() -> None:
     def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
-        while (element := take_next(input_iterator)) is not None:
+        for element in input_iterator:
             yield element + 1
 
     def multiply_two(input_iterator: Iterator[int]) -> Iterator[int]:
-        while (element := take_next(input_iterator)) is not None:
+        for element in input_iterator:
             yield element * 2
 
     def is_even(value: int) -> bool:
