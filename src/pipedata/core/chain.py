@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from itertools import islice
+import functools
+import itertools
 from typing import (
     Any,
     Callable,
@@ -19,6 +20,12 @@ from typing import (
 TStart = TypeVar("TStart")
 TEnd = TypeVar("TEnd")
 TOther = TypeVar("TOther")
+
+
+def _batched(iterable: Iterator[TEnd], n: Optional[int]) -> Iterator[Tuple[TEnd, ...]]:
+    """Can be replaced by itertools.batched once using Python 3.12+."""
+    while (elements := tuple(itertools.islice(iterable, n))) != ():
+        yield elements
 
 
 def _identity(input_iterator: Iterator[TEnd]) -> Iterator[TEnd]:
@@ -122,10 +129,10 @@ class Chain(Generic[TStart, TEnd]):
         Remove elements from the stream that do not pass the filter function.
         """
 
+        @functools.wraps(func)
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TEnd]:
             return filter(func, previous_step)
 
-        new_action.__name__ = func.__name__
         return self.flat_map(new_action)
 
     def map(  # noqa: A003
@@ -135,13 +142,13 @@ class Chain(Generic[TStart, TEnd]):
         Return a single transformed element from each input element.
         """
 
+        @functools.wraps(func)
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
             return map(func, previous_step)
 
-        new_action.__name__ = func.__name__
         return self.flat_map(new_action)
 
-    def map_tuple(
+    def batched_map(
         self, func: Callable[[Tuple[TEnd, ...]], TOther], n: Optional[int] = None
     ) -> Chain[TStart, TOther]:
         """
@@ -151,11 +158,11 @@ class Chain(Generic[TStart, TEnd]):
         an iterator of 1 element.
         """
 
+        @functools.wraps(func)
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
-            while elements := tuple(islice(previous_step, n)):
+            for elements in _batched(previous_step, n):
                 yield func(elements)
 
-        new_action.__name__ = func.__name__
         return self.flat_map(new_action)
 
     def get_counts(self) -> List[Dict[str, Any]]:
