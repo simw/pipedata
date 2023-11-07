@@ -22,7 +22,7 @@ TEnd = TypeVar("TEnd")
 TOther = TypeVar("TOther")
 
 
-def _batched(iterable: Iterator[TEnd], n: Optional[int]) -> Iterator[Tuple[TEnd, ...]]:
+def batched(iterable: Iterator[TEnd], n: Optional[int]) -> Iterator[Tuple[TEnd, ...]]:
     """Can be replaced by itertools.batched once using Python 3.12+."""
     while (elements := tuple(itertools.islice(iterable, n))) != ():
         yield elements
@@ -160,7 +160,7 @@ class Chain(Generic[TStart, TEnd]):
 
         @functools.wraps(func)
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
-            for elements in _batched(previous_step, n):
+            for elements in batched(previous_step, n):
                 yield func(elements)
 
         return self.flat_map(new_action)

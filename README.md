@@ -8,7 +8,68 @@ Chained operations in Python, applied to data processing.
 pip install pipedata
 ```
 
-## An Example
+## Examples
+
+### Chaining Data Operations
+
+pipedata.ops provides some operations for streaming data through memory.
+
+```py
+import json
+import zipfile
+
+import pyarrow.parquet as pq
+
+from pipedata.core import StreamStart
+from pipedata.ops import json_records, parquet_writer, zipped_files
+
+
+data1 = [
+    {"col1": 1, "col2": "Hello"},
+    {"col1": 2, "col2": "world"},
+]
+data2 = [
+    {"col1": 3, "col2": "!"},
+]
+
+with zipfile.ZipFile("test_input.json.zip", "w") as zipped:
+    zipped.writestr("file1.json", json.dumps(data1))
+    zipped.writestr("file2.json", json.dumps(data2))
+
+result = (
+    StreamStart(["test_input.json.zip"])
+    .flat_map(zipped_files)
+    .flat_map(json_records())
+    .flat_map(parquet_writer("test_output.parquet"))
+    .to_list()
+)
+
+table = pq.read_table("test_output.parquet")
+print(table.to_pydict())
+#> {'col1': [1, 2, 3], 'col2': ['Hello', 'world', '!']}
+```
+
+Alternatively, you can construct the pipeline as a chain:
+
+```py
+import pyarrow.parquet as pq
+
+from pipedata.core import ChainStart, StreamStart
+from pipedata.ops import json_records, parquet_writer, zipped_files
+
+# Running this after input file created in above example
+chain = (
+    ChainStart()
+    .flat_map(zipped_files)
+    .flat_map(json_records())
+    .flat_map(parquet_writer("test_output_2.parquet"))
+)
+result = StreamStart(["test_input.json.zip"]).flat_map(chain).to_list()
+table = pq.read_table("test_output_2.parquet")
+print(table.to_pydict())
+#> {'col1': [1, 2, 3], 'col2': ['Hello', 'world', '!']}
+
+```
 
 ### Core Framework
 

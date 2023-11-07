@@ -4,7 +4,7 @@ sources = src tests
 
 .PHONY: prepare
 prepare:
-	poetry install
+	poetry install --with ops
 
 
 .PHONY: lintable
