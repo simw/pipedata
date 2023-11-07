@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-import pyarrow.parquet as pq
+import pyarrow.parquet as pq  # type: ignore
 import pytest
 
 from pipedata.core import StreamStart
@@ -20,11 +20,7 @@ def test_parquet_simple_storage() -> None:
         temp_path = Path(tmpdir)
         output_path = temp_path / "test.parquet"
 
-        result = (
-            StreamStart(items)
-            .flat_map(parquet_writer(str(output_path)))
-            .to_list()
-        )
+        result = StreamStart(items).flat_map(parquet_writer(str(output_path))).to_list()
 
         assert result == [str(output_path)]
 
@@ -122,5 +118,5 @@ def test_parquet_multiple_files_wrong_path() -> None:
         temp_path = Path(tmpdir)
         output_path = temp_path / "test.parquet"
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError):  # noqa: PT011
             parquet_writer(str(output_path), max_file_length=2)

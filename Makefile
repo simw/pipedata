@@ -21,11 +21,46 @@ lint: prepare
 	poetry run mypy $(sources)
 
 
-
 .PHONY: test
 test: prepare
 	poetry run coverage run -m pytest
 	poetry run coverage report
+
+
+.PHONY: test-python-versions
+test-python-versions:
+	poetry env use python3.8
+	make test
+
+	poetry env use python3.9
+	make test
+
+	poetry env use python3.10
+	make test
+
+	poetry env use python3.11
+	make test
+
+	poetry env use python3.12
+	make test
+
+
+.PHONY: test-dep-versions
+test-dep-versions: prepare
+	poetry run pip install pyarrow==9.0.0
+	poetry run python -m pytest
+
+	poetry run pip install pyarrow==13.0.0
+	poetry run python -m pytest
+
+	poetry run pip install pyarrow==14.0.0
+	poetry run python -m pytest
+
+	poetry run pip install ijson==3.0.0
+	poetry run python -m pytest
+
+	poetry run pip install fsspec==0.9.0
+	poetry run python -m pytest
 
 
 .PHONY: clean

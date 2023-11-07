@@ -3,7 +3,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-import pyarrow.parquet as pq
+import pyarrow.parquet as pq  # type: ignore
 
 from pipedata.core import StreamStart
 from pipedata.ops import json_records, parquet_writer, zipped_files

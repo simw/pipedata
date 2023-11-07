@@ -1,7 +1,7 @@
 from typing import Any, Callable, Dict, Iterator, Optional
 
-import pyarrow as pa
-import pyarrow.parquet as pq
+import pyarrow as pa  # type: ignore
+import pyarrow.parquet as pq  # type: ignore
 
 from pipedata.core.chain import batched
 
@@ -12,7 +12,6 @@ def parquet_writer(
     row_group_length: Optional[int] = None,
     max_file_length: Optional[int] = None,
 ) -> Callable[[Iterator[Dict[str, Any]]], Iterator[str]]:
-
     if row_group_length is None and max_file_length is not None:
         row_group_length = max_file_length
 
