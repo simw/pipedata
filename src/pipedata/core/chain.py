@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from itertools import islice
 from typing import (
     Any,
     Callable,
@@ -16,16 +16,13 @@ from typing import (
     overload,
 )
 
-from pipedata.core.itertools import take_next, take_up_to_n
-
 TStart = TypeVar("TStart")
 TEnd = TypeVar("TEnd")
 TOther = TypeVar("TOther")
 
 
 def _identity(input_iterator: Iterator[TEnd]) -> Iterator[TEnd]:
-    while (element := take_next(input_iterator)) is not None:
-        yield element
+    yield from input_iterator
 
 
 class CountingIterator(Iterator[TStart]):
@@ -48,36 +45,29 @@ class CountingIterator(Iterator[TStart]):
         return self._count
 
 
-class CountedFunc(Generic[TStart, TEnd]):
+class ChainLink(Generic[TStart, TEnd]):
     def __init__(
         self,
         func: Callable[[Iterator[TStart]], Iterator[TEnd]],
     ) -> None:
         self._func = func
-        self._counting_input: Optional[CountingIterator[TStart]] = None
-        self._counting_output: Optional[CountingIterator[TEnd]] = None
+        self._input: Optional[CountingIterator[TStart]] = None
+        self._output: Optional[CountingIterator[TEnd]] = None
 
     @property
     def __name__(self) -> str:  # noqa: A003
         return self._func.__name__
 
     def __call__(self, input_iterator: Iterator[TStart]) -> Iterator[TEnd]:
-        self._counting_input = CountingIterator(input_iterator)
-        self._counting_output = CountingIterator(self._func(self._counting_input))
-        return self._counting_output
+        self._input = CountingIterator(input_iterator)
+        self._output = CountingIterator(self._func(self._input))
+        return self._output
 
     def get_counts(self) -> Tuple[int, int]:
         return (
-            0 if self._counting_input is None else self._counting_input.get_count(),
-            0 if self._counting_output is None else self._counting_output.get_count(),
+            0 if self._input is None else self._input.get_count(),
+            0 if self._output is None else self._output.get_count(),
         )
-
-
-@dataclass
-class StepCount:
-    name: str
-    inputs: int
-    outputs: int
 
 
 class Chain(Generic[TStart, TEnd]):
@@ -106,11 +96,11 @@ class Chain(Generic[TStart, TEnd]):
         ],
     ) -> None:
         self._previous_steps = previous_steps
-        self._func = CountedFunc(func)
+        self._func = ChainLink(func)
 
     def __call__(self, input_iterator: Iterator[TStart]) -> Iterator[TEnd]:
         if self._previous_steps is None:
-            func = cast(CountedFunc[TStart, TEnd], self._func)
+            func = cast(ChainLink[TStart, TEnd], self._func)
             return func(input_iterator)
 
         return self._func(self._previous_steps(input_iterator))  # type: ignore
@@ -133,9 +123,7 @@ class Chain(Generic[TStart, TEnd]):
         """
 
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TEnd]:
-            while (element := take_next(previous_step)) is not None:
-                if func(element) is True:
-                    yield element
+            return filter(func, previous_step)
 
         new_action.__name__ = func.__name__
         return self.flat_map(new_action)
@@ -148,8 +136,7 @@ class Chain(Generic[TStart, TEnd]):
         """
 
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
-            while (element := take_next(previous_step)) is not None:
-                yield func(element)
+            return map(func, previous_step)
 
         new_action.__name__ = func.__name__
         return self.flat_map(new_action)
@@ -165,7 +152,7 @@ class Chain(Generic[TStart, TEnd]):
         """
 
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
-            while elements := take_up_to_n(previous_step, n):
+            while elements := tuple(islice(previous_step, n)):
                 yield func(elements)
 
         new_action.__name__ = func.__name__

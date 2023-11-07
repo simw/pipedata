@@ -1,7 +1,7 @@
+from itertools import islice
 from typing import Iterable, Iterator, List
 
 from pipedata.core import ChainStart, StreamStart
-from pipedata.core.itertools import take_next, take_up_to_n
 
 
 def test_stream_to_list() -> None:
@@ -81,8 +81,7 @@ def test_stream_filter_with_none_passing() -> None:
 
 def test_stream_flat_map_identity() -> None:
     def identity(input_iterator: Iterator[int]) -> Iterator[int]:
-        while (element := take_next(input_iterator)) is not None:
-            yield element
+        yield from input_iterator
 
     result = StreamStart([0, 1, 2, 3]).flat_map(identity).to_list()
     assert result == [0, 1, 2, 3]
@@ -90,11 +89,11 @@ def test_stream_flat_map_identity() -> None:
 
 def test_stream_flat_map_chain() -> None:
     def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
-        while (element := take_next(input_iterator)) is not None:
+        for element in input_iterator:
             yield element + 1
 
     def multiply_two(input_iterator: Iterator[int]) -> Iterator[int]:
-        while (element := take_next(input_iterator)) is not None:
+        for element in input_iterator:
             yield element * 2
 
     result = (
@@ -105,7 +104,7 @@ def test_stream_flat_map_chain() -> None:
 
 def test_stream_flat_map_growing() -> None:
     def add_element(input_iterator: Iterator[int]) -> Iterator[int]:
-        while (element := take_next(input_iterator)) is not None:
+        for element in input_iterator:
             yield element
             yield element + 1
 
@@ -115,7 +114,7 @@ def test_stream_flat_map_growing() -> None:
 
 def test_stream_flat_map_shrinking() -> None:
     def add_two_values(input_iterator: Iterator[int]) -> Iterator[int]:
-        while batch := take_up_to_n(input_iterator, 2):
+        while batch := tuple(islice(input_iterator, 2)):
             yield sum(batch)
 
     result = StreamStart([0, 1, 2, 3, 4]).flat_map(add_two_values).to_list()
