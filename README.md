@@ -4,6 +4,15 @@ Chained operations in Python, applied to data processing.
 
 ## Installation
 
+To install with all optional dependencies:
+
+```bash
+pip install pipedata[ops]
+```
+
+If you only want the core functionality (building pipelines), and not
+the data processing applications, then:
+
 ```bash
 pip install pipedata
 ```
