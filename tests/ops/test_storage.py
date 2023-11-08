@@ -83,14 +83,14 @@ def test_parquet_multiple_files() -> None:
         )
 
         assert result == [
-            str(temp_path / "test_0000.parquet"),
             str(temp_path / "test_0001.parquet"),
+            str(temp_path / "test_0002.parquet"),
         ]
 
-        files = list(temp_path.glob("**/*"))
+        files = sorted(temp_path.glob("**/*"))
         expected_files = [
-            temp_path / "test_0000.parquet",
             temp_path / "test_0001.parquet",
+            temp_path / "test_0002.parquet",
         ]
         assert files == expected_files
 
