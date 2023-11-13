@@ -23,6 +23,8 @@ def json_records(
 
 
 def csv_records() -> Callable[[Iterator[IO[bytes]]], Iterator[Dict[str, Any]]]:
+    logger.info(f"Initializing csv reader")
+
     def csv_records_func(csv_paths: Iterator[IO[bytes]]) -> Iterator[Dict[str, Any]]:
         for csv_path in csv_paths:
             logger.info(f"Reading csv file {csv_path}")

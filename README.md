@@ -140,3 +140,10 @@ print(json.dumps(chain.get_counts(), indent=4))
 print(StreamStart(range(10)).flat_map(chain).to_list())
 #> [2, 10, 10]
 ```
+
+## Similar Functionality
+
+- Python has built in functionality for building iterators
+
+- [LangChain](https://www.langchain.com/) implements chained operations using its 
+[Runnable protocol](https://python.langchain.com/docs/expression_language/interface)
