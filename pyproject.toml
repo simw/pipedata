@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pipedata"
-version = "0.1.2"
+version = "0.2"
 description = "Framework for building pipelines for data processing"
 authors = ["Simon Wicks <simw@users.noreply.github.com>"]
 readme = "README.md"

@@ -35,6 +35,7 @@ def test_zipped_files() -> None:
         result = (
             StreamStart([str(zip_path)])
             .flat_map(zipped_files)
+            .map(lambda x: x.contents)
             .flat_map(json_records())
             .flat_map(parquet_writer(str(output_path)))
             .to_list()

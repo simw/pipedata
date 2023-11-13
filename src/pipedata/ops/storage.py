@@ -43,7 +43,10 @@ def parquet_writer(
 
             writer.write_table(table)
             file_length += len(batch)
-            logger.info(f"Written {len(batch)} ({file_length} total) rows to {formated_file_path}")
+            logger.info(
+                f"Written {len(batch)} ({file_length} total) rows "
+                f"to {formated_file_path}"
+            )
 
             if max_file_length is not None and file_length >= max_file_length:
                 writer.close()
