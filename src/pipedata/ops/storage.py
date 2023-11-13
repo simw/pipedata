@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Callable, Dict, Iterator, Optional
 
 import pyarrow as pa  # type: ignore
@@ -5,14 +6,7 @@ import pyarrow.parquet as pq  # type: ignore
 
 from pipedata.core.chain import batched
 
-# Option to accumulate the pyarrow table more frequently
-# so that doesn't need whole list(dict) and pyarrow table
-# in memory at the same time
-
-# Option to hae row_group_length and max_file_length dpendent
-# on size of data, as opposed to number of just numbers of rows.
-# Can combine this with the existing settings, so runs
-# at the smaller of the two.
+logger = logging.getLogger(__name__)
 
 
 def parquet_writer(
@@ -24,12 +18,15 @@ def parquet_writer(
     if row_group_length is None and max_file_length is not None:
         row_group_length = max_file_length
 
-    if max_file_length is not None:
+    multi_file = max_file_length is not None
+    if multi_file:
         if file_path.format(i=1) == file_path:
             msg = "When (possibly) writing to multiple files (as the file_length"
             msg += " argument is not None), the file_path argument must be a"
             msg += " format string that contains a format specifier for the file."
             raise ValueError(msg)
+
+    logger.info(f"Initializing parquet writer with {file_path=}")
 
     def parquet_writer_func(records: Iterator[Dict[str, Any]]) -> Iterator[str]:
         writer = None
@@ -39,22 +36,29 @@ def parquet_writer(
             table = pa.Table.from_pylist(batch, schema=schema)
             if writer is None:
                 formated_file_path = file_path
-                if max_file_length is not None:
+                if multi_file:
                     formated_file_path = file_path.format(i=file_number)
+                logger.info(f"Writing to {formated_file_path=}")
                 writer = pq.ParquetWriter(formated_file_path, table.schema)
 
             writer.write_table(table)
             file_length += len(batch)
+            logger.info(
+                f"Written {len(batch)} ({file_length} total) rows "
+                f"to {formated_file_path}"
+            )
 
             if max_file_length is not None and file_length >= max_file_length:
                 writer.close()
                 writer = None
                 file_length = 0
                 file_number += 1
+                logger.info(f"Finished writing to {formated_file_path}")
                 yield formated_file_path
 
         if writer is not None:
             writer.close()
+            logger.info(f"Final file closed at {formated_file_path}")
             yield formated_file_path
 
     return parquet_writer_func
