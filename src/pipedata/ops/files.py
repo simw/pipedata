@@ -9,14 +9,12 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class ZippedFileRef:
+class OpenedFileRef:
     name: str
-    file_size: int
-    compressed_size: int
     contents: IO[bytes]
 
 
-def zipped_files(file_refs: Iterator[str]) -> Iterator[ZippedFileRef]:
+def zipped_files(file_refs: Iterator[str]) -> Iterator[OpenedFileRef]:
     logger.info("Initializing zipped files reader")
     for file_ref in file_refs:
         logger.info(f"Opening zip file at {file_ref}")
@@ -28,9 +26,7 @@ def zipped_files(file_refs: Iterator[str]) -> Iterator[ZippedFileRef]:
                     name = info.filename
                     logger.info(f"Reading file {i} ({name}) from zip file")
                     with zip_file.open(name) as inner_file:
-                        yield ZippedFileRef(
+                        yield OpenedFileRef(
                             name=name,
-                            file_size=info.file_size,
-                            compressed_size=info.compress_size,
                             contents=inner_file,
                         )
