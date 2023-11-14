@@ -2,8 +2,11 @@ import tempfile
 import zipfile
 from pathlib import Path
 
+import pyarrow as pa  # type: ignore
+import pytest
+
 from pipedata.core import StreamStart
-from pipedata.ops.files import zipped_files
+from pipedata.ops.files import FilesReaderError, read_from_parquet, zipped_files
 
 
 def test_zipped_files() -> None:
@@ -44,3 +47,75 @@ def test_zipped_file_contents() -> None:
             "Hello, world 3!",
         ]
         assert result == expected
+
+
+def test_parquet_reading_simple() -> None:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        parquet_path = Path(temp_dir) / "test.parquet"
+
+        table = pa.Table.from_pydict(
+            {
+                "a": [1, 2, 3],
+                "b": [4, 5, 6],
+            }
+        )
+        pa.parquet.write_table(table, parquet_path)
+
+        parquet_reader = read_from_parquet()
+        result = StreamStart([str(parquet_path)]).flat_map(parquet_reader).to_list()
+
+        expected = [
+            {"a": 1, "b": 4},
+            {"a": 2, "b": 5},
+            {"a": 3, "b": 6},
+        ]
+        assert result == expected
+
+
+def test_parquet_reading_with_columns() -> None:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        parquet_path = Path(temp_dir) / "test.parquet"
+
+        table = pa.Table.from_pydict(
+            {
+                "a": [1, 2, 3],
+                "b": [4, 5, 6],
+            }
+        )
+        pa.parquet.write_table(table, parquet_path)
+
+        parquet_reader = read_from_parquet(columns=["a"])
+        result = StreamStart([str(parquet_path)]).flat_map(parquet_reader).to_list()
+
+        expected = [
+            {"a": 1},
+            {"a": 2},
+            {"a": 3},
+        ]
+        assert result == expected
+
+
+def test_parquet_reading_record_batch() -> None:
+    with tempfile.TemporaryDirectory() as temp_dir:
+        parquet_path = Path(temp_dir) / "test.parquet"
+
+        table = pa.Table.from_pydict(
+            {
+                "a": [1, 2, 3],
+                "b": [4, 5, 6],
+            }
+        )
+        pa.parquet.write_table(table, parquet_path)
+
+        parquet_reader = read_from_parquet(columns=["a"], return_as="recordbatch")
+        result = StreamStart([str(parquet_path)]).flat_map(parquet_reader).to_list()
+
+        schema = pa.schema([("a", pa.int64())])
+        a_array = pa.array([1, 2, 3])
+        rb = pa.RecordBatch.from_arrays([a_array], schema=schema)
+        assert result == [rb]
+
+
+def test_parquet_reading_invalid_return_as() -> None:
+    with pytest.raises(FilesReaderError):
+        read_from_parquet(columns=["a"], return_as="unknown")  # type: ignore
