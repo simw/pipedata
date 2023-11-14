@@ -64,7 +64,12 @@ def read_from_parquet(
         for file_ref in file_refs:
             logger.info(f"Reading parquet file {file_ref}")
             ds = pa_dataset.dataset(file_ref, format="parquet")
-            for batch in ds.to_batches(columns=columns, batch_size=batch_size):
+            for i, batch in enumerate(
+                ds.to_batches(columns=columns, batch_size=batch_size)
+            ):
+                logger.info(
+                    f"Processing batch {i} (length {len(batch)}) from {file_ref}"
+                )
                 if return_as == "recordbatch":
                     yield batch
                 elif return_as == "record":
