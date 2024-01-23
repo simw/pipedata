@@ -89,7 +89,7 @@ def test_stream_flat_map_identity() -> None:
     assert result == [0, 1, 2, 3]
 
 
-def test_stream_flat_map_chain() -> None:
+def test_stream_then_chain() -> None:
     def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
         for element in input_iterator:
             yield element + 1
@@ -98,7 +98,21 @@ def test_stream_flat_map_chain() -> None:
         for element in input_iterator:
             yield element * 2
 
-    result = Stream([0, 1, 2, 3]).flat_map(add_one).flat_map(multiply_two).to_list()
+    result = Stream([0, 1, 2, 3]).then(add_one).then(multiply_two).to_list()
+    assert result == [2, 4, 6, 8]
+
+
+def test_stream_pipe_chain() -> None:
+    def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
+        for element in input_iterator:
+            yield element + 1
+
+    def multiply_two(input_iterator: Iterator[int]) -> Iterator[int]:
+        for element in input_iterator:
+            yield element * 2
+
+    stream = Stream([0, 1, 2, 3]) | add_one | multiply_two
+    result = stream.to_list()
     assert result == [2, 4, 6, 8]
 
 

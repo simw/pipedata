@@ -97,7 +97,76 @@ def test_chain_flat_map() -> None:
     assert result2 == [3, 4, 5]
 
 
-def test_chain_multiple_operations() -> None:
+def test_chain_then() -> None:
+    def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
+        for element in input_iterator:
+            yield element + 1
+
+    chain = Chain[int]().then(add_one)
+
+    result = list(chain(iter([0, 1, 2, 3])))
+    assert result == [1, 2, 3, 4]
+
+    result2 = list(chain(iter([2, 3, 4])))
+    assert result2 == [3, 4, 5]
+
+
+def test_chain_pipe() -> None:
+    def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
+        for element in input_iterator:
+            yield element + 1
+
+    chain = Chain[int]() | add_one
+
+    result = list(chain(iter([0, 1, 2, 3])))
+    assert result == [1, 2, 3, 4]
+
+    result2 = list(chain(iter([2, 3, 4])))
+    assert result2 == [3, 4, 5]
+
+
+def test_chain_piping_multiple_operations() -> None:  # noqa: C901
+    def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
+        for element in input_iterator:
+            yield element + 1
+
+    def multiply_two(input_iterator: Iterator[int]) -> Iterator[int]:
+        for element in input_iterator:
+            yield element * 2
+
+    def is_even(input_iterator: Iterator[int]) -> Iterator[int]:
+        for element in input_iterator:
+            if element % 2 == 0:
+                yield element
+
+    chain = Chain[int]() | add_one | is_even | multiply_two
+    result = list(chain(iter([0, 1, 2, 3])))
+    assert result == [4, 8]
+    assert chain.get_counts() == [
+        {
+            "name": "_identity",
+            "inputs": 4,
+            "outputs": 4,
+        },
+        {
+            "name": "add_one",
+            "inputs": 4,
+            "outputs": 4,
+        },
+        {
+            "name": "is_even",
+            "inputs": 4,
+            "outputs": 2,
+        },
+        {
+            "name": "multiply_two",
+            "inputs": 2,
+            "outputs": 2,
+        },
+    ]
+
+
+def test_chain_multiple_operations() -> None:  # noqa: C901
     def add_one(input_iterator: Iterator[int]) -> Iterator[int]:
         for element in input_iterator:
             yield element + 1
@@ -109,7 +178,7 @@ def test_chain_multiple_operations() -> None:
     def is_even(value: int) -> bool:
         return value % 2 == 0
 
-    chain = Chain[int]().flat_map(add_one).filter(is_even).flat_map(multiply_two)
+    chain = Chain[int]().then(add_one).filter(is_even).then(multiply_two)
     result = list(chain(iter([0, 1, 2, 3])))
     assert result == [4, 8]
     assert chain.get_counts() == [

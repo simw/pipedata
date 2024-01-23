@@ -37,7 +37,17 @@ class StreamType(Iterable[TEnd]):
     def flat_map(
         self, func: Callable[[Iterator[TEnd]], Iterator[TNewEnd]]
     ) -> StreamType[TNewEnd]:
-        return StreamType(self._items, self._chain.flat_map(func))
+        return StreamType(self._items, self._chain.then(func))
+
+    def then(
+        self, func: Callable[[Iterator[TEnd]], Iterator[TNewEnd]]
+    ) -> StreamType[TNewEnd]:
+        return StreamType(self._items, self._chain.then(func))
+
+    def __or__(
+        self, func: Callable[[Iterator[TEnd]], Iterator[TNewEnd]]
+    ) -> StreamType[TNewEnd]:
+        return StreamType(self._items, self._chain.then(func))
 
     def filter(self, func: Callable[[TEnd], bool]) -> StreamType[TEnd]:  # noqa: A003
         return StreamType(self._items, self._chain.filter(func))

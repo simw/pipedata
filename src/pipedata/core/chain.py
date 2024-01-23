@@ -71,12 +71,17 @@ class ChainType(Generic[TStart, TEnd]):
         stream of elements. It is the most powerful operation, and all the
         other operations are implemented in terms of it.
         """
-        return ChainType(self, func)
+        return self.then(func)
 
     def then(
         self, func: Callable[[Iterator[TEnd]], Iterator[TOther]]
     ) -> ChainType[TStart, TOther]:
         return ChainType(self, func)
+
+    def __or__(
+        self, func: Callable[[Iterator[TEnd]], Iterator[TOther]]
+    ) -> ChainType[TStart, TOther]:
+        return self.then(func)
 
     def filter(  # noqa: A003
         self, func: Callable[[TEnd], bool]
