@@ -211,7 +211,7 @@ def test_chain_batched_map() -> None:
     def add_values(values: Tuple[int, ...]) -> int:
         return sum(values)
 
-    chain = Chain[int]().then(ops.batching(add_values, 2))
+    chain = Chain[int]().then(ops.batched(add_values, 2))
     result = list(chain(iter([0, 1, 2, 3, 4])))
     assert result == [1, 5, 4]
     assert chain.get_counts() == [

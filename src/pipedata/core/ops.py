@@ -39,7 +39,7 @@ class mapping(ChainLink[TEnd, TOther]):  # noqa: N801
         super().__init__(new_action)
 
 
-class batching(ChainLink[TEnd, TOther]):  # noqa: N801
+class batched(ChainLink[TEnd, TOther]):  # noqa: N801
     def __init__(self, func: Callable[[Tuple[TEnd, ...]], TOther], n: Optional[int]):
         @functools.wraps(func)
         def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:

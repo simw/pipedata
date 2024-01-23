@@ -93,7 +93,7 @@ result = (
     Stream(range(10))
     .then(ops.filtering(lambda x: x % 2 == 0))
     .then(ops.mapping(lambda x: x ^ 2))
-    .then(ops.batching(lambda x: x, 2))
+    .then(ops.batched(lambda x: x, 2))
     .to_list()
 )
 print(result)
@@ -111,7 +111,7 @@ chain = (
     Chain()
     | ops.filtering(lambda x: x % 2 == 0)
     | ops.mapping(lambda x: x ^ 2)
-    | ops.batching(lambda x: sum(x), 2)
+    | ops.batched(lambda x: sum(x), 2)
 )
 print(Stream(range(10)).then(chain).to_list())
 #> [2, 10, 10]
