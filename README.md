@@ -29,7 +29,7 @@ import zipfile
 
 import pyarrow.parquet as pq
 
-from pipedata.core import StreamStart
+from pipedata.core import Stream
 from pipedata.ops import json_records, parquet_writer, zipped_files
 
 
@@ -46,7 +46,7 @@ with zipfile.ZipFile("test_input.json.zip", "w") as zipped:
     zipped.writestr("file2.json", json.dumps(data2))
 
 result = (
-    StreamStart(["test_input.json.zip"])
+    Stream(["test_input.json.zip"])
     .flat_map(zipped_files)
     .flat_map(json_records())
     .flat_map(parquet_writer("test_output.parquet"))
@@ -63,17 +63,17 @@ Alternatively, you can construct the pipeline as a chain:
 ```py
 import pyarrow.parquet as pq
 
-from pipedata.core import ChainStart, StreamStart
+from pipedata.core import Chain, Stream
 from pipedata.ops import json_records, parquet_writer, zipped_files
 
 # Running this after input file created in above example
 chain = (
-    ChainStart()
+    Chain()
     .flat_map(zipped_files)
     .flat_map(json_records())
     .flat_map(parquet_writer("test_output_2.parquet"))
 )
-result = StreamStart(["test_input.json.zip"]).flat_map(chain).to_list()
+result = Stream(["test_input.json.zip"]).flat_map(chain).to_list()
 table = pq.read_table("test_output_2.parquet")
 print(table.to_pydict())
 #> {'col1': [1, 2, 3], 'col2': ['Hello', 'world', '!']}
@@ -86,11 +86,11 @@ The core framework provides the building blocks for chaining operations.
 
 Running a stream:
 ```py
-from pipedata.core import StreamStart
+from pipedata.core import Stream
 
 
 result = (
-    StreamStart(range(10))
+    Stream(range(10))
     .filter(lambda x: x % 2 == 0)
     .map(lambda x: x ^ 2)
     .batched_map(lambda x: x, 2)
@@ -103,11 +103,11 @@ print(result)
 Creating a chain and then using it:
 ```py
 import json
-from pipedata.core import ChainStart, Stream, StreamStart
+from pipedata.core import Chain, Stream, Stream
 
 
 chain = (
-    ChainStart()
+    Chain()
     .filter(lambda x: x % 2 == 0)
     .map(lambda x: x ^ 2)
     .batched_map(lambda x: sum(x), 2)
@@ -137,7 +137,7 @@ print(json.dumps(chain.get_counts(), indent=4))
 #>         "outputs": 3
 #>     }
 #> ]
-print(StreamStart(range(10)).flat_map(chain).to_list())
+print(Stream(range(10)).flat_map(chain).to_list())
 #> [2, 10, 10]
 ```
 

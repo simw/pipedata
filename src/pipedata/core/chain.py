@@ -26,11 +26,11 @@ def _identity(input_iterator: Iterator[TEnd]) -> Iterator[TEnd]:
     yield from input_iterator
 
 
-class Chain(Generic[TStart, TEnd]):
+class ChainType(Generic[TStart, TEnd]):
     @overload
     def __init__(
         self,
-        previous_steps: Chain[TStart, TOther],
+        previous_steps: ChainType[TStart, TOther],
         func: Callable[[Iterator[TOther]], Iterator[TEnd]],
     ):
         ...
@@ -45,7 +45,7 @@ class Chain(Generic[TStart, TEnd]):
 
     def __init__(
         self,
-        previous_steps: Optional[Chain[TStart, TOther]],
+        previous_steps: Optional[ChainType[TStart, TOther]],
         func: Union[
             Callable[[Iterator[TOther]], Iterator[TEnd]],
             Callable[[Iterator[TStart]], Iterator[TEnd]],
@@ -63,7 +63,7 @@ class Chain(Generic[TStart, TEnd]):
 
     def flat_map(
         self, func: Callable[[Iterator[TEnd]], Iterator[TOther]]
-    ) -> Chain[TStart, TOther]:
+    ) -> ChainType[TStart, TOther]:
         """
         Output zero or more elements from one or more input elements.
 
@@ -71,14 +71,16 @@ class Chain(Generic[TStart, TEnd]):
         stream of elements. It is the most powerful operation, and all the
         other operations are implemented in terms of it.
         """
-        return Chain(self, func)
+        return ChainType(self, func)
 
     def then(
         self, func: Callable[[Iterator[TEnd]], Iterator[TOther]]
-    ) -> Chain[TStart, TOther]:
-        return Chain(self, func)
+    ) -> ChainType[TStart, TOther]:
+        return ChainType(self, func)
 
-    def filter(self, func: Callable[[TEnd], bool]) -> Chain[TStart, TEnd]:  # noqa: A003
+    def filter(  # noqa: A003
+        self, func: Callable[[TEnd], bool]
+    ) -> ChainType[TStart, TEnd]:
         """
         Remove elements from the stream that do not pass the filter function.
         """
@@ -86,7 +88,7 @@ class Chain(Generic[TStart, TEnd]):
 
     def map(  # noqa: A003
         self, func: Callable[[TEnd], TOther]
-    ) -> Chain[TStart, TOther]:
+    ) -> ChainType[TStart, TOther]:
         """
         Return a single transformed element from each input element.
         """
@@ -94,7 +96,7 @@ class Chain(Generic[TStart, TEnd]):
 
     def batched_map(
         self, func: Callable[[Tuple[TEnd, ...]], TOther], n: Optional[int] = None
-    ) -> Chain[TStart, TOther]:
+    ) -> ChainType[TStart, TOther]:
         """
         Return a single transformed element from (up to) n input elements.
 
@@ -119,6 +121,6 @@ class Chain(Generic[TStart, TEnd]):
         return step_counts
 
 
-class ChainStart(Chain[TOther, TOther]):
+class Chain(ChainType[TOther, TOther]):
     def __init__(self) -> None:
         super().__init__(None, _identity)

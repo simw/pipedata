@@ -5,7 +5,7 @@ from pathlib import Path
 import pyarrow as pa  # type: ignore
 import pytest
 
-from pipedata.core import StreamStart
+from pipedata.core import Stream
 from pipedata.ops.files import FilesReaderError, read_from_parquet, zipped_files
 
 
@@ -18,7 +18,7 @@ def test_zipped_files() -> None:
             zip_file.writestr("test2.txt", "Hello, world 2!")
             zip_file.writestr("test3.txt", "Hello, world 3!")
 
-        result = StreamStart([str(zip_path)]).flat_map(zipped_files).to_list()
+        result = Stream([str(zip_path)]).flat_map(zipped_files).to_list()
 
         assert result[0].name == "test.txt"
         assert result[1].name == "test2.txt"
@@ -35,7 +35,7 @@ def test_zipped_file_contents() -> None:
             zip_file.writestr("test3.txt", "Hello, world 3!")
 
         result = (
-            StreamStart([str(zip_path)])
+            Stream([str(zip_path)])
             .flat_map(zipped_files)
             .map(lambda x: x.contents.read().decode("utf-8"))
             .to_list()
@@ -62,7 +62,7 @@ def test_parquet_reading_simple() -> None:
         pa.parquet.write_table(table, parquet_path)
 
         parquet_reader = read_from_parquet()
-        result = StreamStart([str(parquet_path)]).flat_map(parquet_reader).to_list()
+        result = Stream([str(parquet_path)]).flat_map(parquet_reader).to_list()
 
         expected = [
             {"a": 1, "b": 4},
@@ -85,7 +85,7 @@ def test_parquet_reading_with_columns() -> None:
         pa.parquet.write_table(table, parquet_path)
 
         parquet_reader = read_from_parquet(columns=["a"])
-        result = StreamStart([str(parquet_path)]).flat_map(parquet_reader).to_list()
+        result = Stream([str(parquet_path)]).flat_map(parquet_reader).to_list()
 
         expected = [
             {"a": 1},
@@ -108,7 +108,7 @@ def test_parquet_reading_record_batch() -> None:
         pa.parquet.write_table(table, parquet_path)
 
         parquet_reader = read_from_parquet(columns=["a"], return_as="recordbatch")
-        result = StreamStart([str(parquet_path)]).flat_map(parquet_reader).to_list()
+        result = Stream([str(parquet_path)]).flat_map(parquet_reader).to_list()
 
         schema = pa.schema([("a", pa.int64())])
         a_array = pa.array([1, 2, 3])

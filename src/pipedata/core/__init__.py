@@ -1,9 +1,9 @@
-from .chain import Chain, ChainStart
-from .stream import Stream, StreamStart
+from .chain import Chain, ChainType
+from .stream import Stream, StreamType
 
 __all__ = [
+    "ChainType",
     "Chain",
-    "ChainStart",
+    "StreamType",
     "Stream",
-    "StreamStart",
 ]
