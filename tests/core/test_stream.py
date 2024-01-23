@@ -1,7 +1,7 @@
 from itertools import islice
 from typing import Iterable, Iterator, List
 
-from pipedata.core import Chain, Stream
+from pipedata.core import Chain, Stream, ops
 
 
 def test_stream_to_list() -> None:
@@ -41,7 +41,9 @@ def test_stream_is_iterable() -> None:
 
 
 def test_stream_with_a_chain() -> None:
-    chain = Chain[int]().filter(lambda x: x % 2 == 0)
+    # mypy gives error on 'cannot infer type argument 1 of filtering
+    # TODO: what to do with mypy and lambda functions
+    chain = Chain[int]().then(ops.filtering(lambda x: x % 2 == 0))  # type: ignore
 
     result = Stream([0, 1, 2, 3]).flat_map(chain).to_list()
     assert result == [0, 2]

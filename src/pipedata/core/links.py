@@ -1,5 +1,3 @@
-import functools
-import itertools
 from typing import (
     Callable,
     Generic,
@@ -12,12 +10,6 @@ from typing import (
 TStart = TypeVar("TStart")
 TEnd = TypeVar("TEnd")
 TOther = TypeVar("TOther")
-
-
-def _batched(iterable: Iterator[TEnd], n: Optional[int]) -> Iterator[Tuple[TEnd, ...]]:
-    """Can be replaced by itertools.batched once using Python 3.12+."""
-    while (elements := tuple(itertools.islice(iterable, n))) != ():
-        yield elements
 
 
 class CountingIterator(Iterator[TStart]):
@@ -63,30 +55,3 @@ class ChainLink(Generic[TStart, TEnd]):
             0 if self._input is None else self._input.get_count(),
             0 if self._output is None else self._output.get_count(),
         )
-
-
-class filter_op(ChainLink[TEnd, TEnd]):  # noqa: N801
-    def __init__(self, func: Callable[[TEnd], bool]):
-        @functools.wraps(func)
-        def new_action(previous_step: Iterator[TEnd]) -> Iterator[TEnd]:
-            return filter(func, previous_step)
-
-        super().__init__(new_action)
-
-
-class one2one_op(ChainLink[TEnd, TOther]):  # noqa: N801
-    def __init__(self, func: Callable[[TEnd], TOther]):
-        @functools.wraps(func)
-        def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
-            return map(func, previous_step)
-
-        super().__init__(new_action)
-
-
-class batched_op(ChainLink[TEnd, TOther]):  # noqa: N801
-    def __init__(self, func: Callable[[Tuple[TEnd, ...]], TOther], n: Optional[int]):
-        @functools.wraps(func)
-        def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
-            return (func(elements) for elements in _batched(previous_step, n))
-
-        super().__init__(new_action)

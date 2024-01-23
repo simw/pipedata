@@ -15,6 +15,7 @@ from typing import (
     overload,
 )
 
+from . import ops
 from .chain import Chain, ChainType
 
 TStart = TypeVar("TStart")
@@ -50,15 +51,15 @@ class StreamType(Iterable[TEnd]):
         return StreamType(self._items, self._chain.then(func))
 
     def filter(self, func: Callable[[TEnd], bool]) -> StreamType[TEnd]:  # noqa: A003
-        return StreamType(self._items, self._chain.filter(func))
+        return self.then(ops.filtering(func))
 
     def map(self, func: Callable[[TEnd], TNewEnd]) -> StreamType[TNewEnd]:  # noqa: A003
-        return StreamType(self._items, self._chain.map(func))
+        return self.then(ops.mapping(func))
 
     def batched_map(
         self, func: Callable[[Tuple[TEnd, ...]], TNewEnd], n: Optional[int] = None
     ) -> StreamType[TNewEnd]:
-        return StreamType(self._items, self._chain.batched_map(func, n))
+        return self.then(ops.batching(func, n))
 
     @overload
     def reduce(self, func: Callable[[TEnd, TEnd], TEnd]) -> TEnd:

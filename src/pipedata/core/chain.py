@@ -8,14 +8,13 @@ from typing import (
     Iterator,
     List,
     Optional,
-    Tuple,
     TypeVar,
     Union,
     cast,
     overload,
 )
 
-from .optypes import ChainLink, batched_op, filter_op, one2one_op
+from .links import ChainLink
 
 TStart = TypeVar("TStart")
 TEnd = TypeVar("TEnd")
@@ -61,18 +60,6 @@ class ChainType(Generic[TStart, TEnd]):
 
         return self._func(self._previous_steps(input_iterator))  # type: ignore
 
-    def flat_map(
-        self, func: Callable[[Iterator[TEnd]], Iterator[TOther]]
-    ) -> ChainType[TStart, TOther]:
-        """
-        Output zero or more elements from one or more input elements.
-
-        This is a fully general operation, that can arbitrarily transform the
-        stream of elements. It is the most powerful operation, and all the
-        other operations are implemented in terms of it.
-        """
-        return self.then(func)
-
     def then(
         self, func: Callable[[Iterator[TEnd]], Iterator[TOther]]
     ) -> ChainType[TStart, TOther]:
@@ -82,33 +69,6 @@ class ChainType(Generic[TStart, TEnd]):
         self, func: Callable[[Iterator[TEnd]], Iterator[TOther]]
     ) -> ChainType[TStart, TOther]:
         return self.then(func)
-
-    def filter(  # noqa: A003
-        self, func: Callable[[TEnd], bool]
-    ) -> ChainType[TStart, TEnd]:
-        """
-        Remove elements from the stream that do not pass the filter function.
-        """
-        return self.then(filter_op(func))
-
-    def map(  # noqa: A003
-        self, func: Callable[[TEnd], TOther]
-    ) -> ChainType[TStart, TOther]:
-        """
-        Return a single transformed element from each input element.
-        """
-        return self.then(one2one_op(func))
-
-    def batched_map(
-        self, func: Callable[[Tuple[TEnd, ...]], TOther], n: Optional[int] = None
-    ) -> ChainType[TStart, TOther]:
-        """
-        Return a single transformed element from (up to) n input elements.
-
-        If n is None, then apply the function to all the elements, and return
-        an iterator of 1 element.
-        """
-        return self.then(batched_op(func, n))
 
     def get_counts(self) -> List[Dict[str, Any]]:
         step_counts = []
