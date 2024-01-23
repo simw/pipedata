@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import functools
-import itertools
 from typing import (
     Any,
     Callable,
@@ -17,64 +15,15 @@ from typing import (
     overload,
 )
 
+from .optypes import ChainLink, batched_op, filter_op, one2one_op
+
 TStart = TypeVar("TStart")
 TEnd = TypeVar("TEnd")
 TOther = TypeVar("TOther")
 
 
-def batched(iterable: Iterator[TEnd], n: Optional[int]) -> Iterator[Tuple[TEnd, ...]]:
-    """Can be replaced by itertools.batched once using Python 3.12+."""
-    while (elements := tuple(itertools.islice(iterable, n))) != ():
-        yield elements
-
-
 def _identity(input_iterator: Iterator[TEnd]) -> Iterator[TEnd]:
     yield from input_iterator
-
-
-class CountingIterator(Iterator[TStart]):
-    def __init__(self, iterator: Iterator[TStart]) -> None:
-        self._iterator = iterator
-        self._count = 0
-
-    def __iter__(self) -> Iterator[TStart]:
-        return self
-
-    def __next__(self) -> TStart:
-        self._count += 1
-        try:
-            return next(self._iterator)
-        except StopIteration as err:
-            self._count -= 1
-            raise StopIteration from err
-
-    def get_count(self) -> int:
-        return self._count
-
-
-class ChainLink(Generic[TStart, TEnd]):
-    def __init__(
-        self,
-        func: Callable[[Iterator[TStart]], Iterator[TEnd]],
-    ) -> None:
-        self._func = func
-        self._input: Optional[CountingIterator[TStart]] = None
-        self._output: Optional[CountingIterator[TEnd]] = None
-
-    @property
-    def __name__(self) -> str:  # noqa: A003
-        return self._func.__name__
-
-    def __call__(self, input_iterator: Iterator[TStart]) -> Iterator[TEnd]:
-        self._input = CountingIterator(input_iterator)
-        self._output = CountingIterator(self._func(self._input))
-        return self._output
-
-    def get_counts(self) -> Tuple[int, int]:
-        return (
-            0 if self._input is None else self._input.get_count(),
-            0 if self._output is None else self._output.get_count(),
-        )
 
 
 class Chain(Generic[TStart, TEnd]):
@@ -124,16 +73,16 @@ class Chain(Generic[TStart, TEnd]):
         """
         return Chain(self, func)
 
+    def then(
+        self, func: Callable[[Iterator[TEnd]], Iterator[TOther]]
+    ) -> Chain[TStart, TOther]:
+        return Chain(self, func)
+
     def filter(self, func: Callable[[TEnd], bool]) -> Chain[TStart, TEnd]:  # noqa: A003
         """
         Remove elements from the stream that do not pass the filter function.
         """
-
-        @functools.wraps(func)
-        def new_action(previous_step: Iterator[TEnd]) -> Iterator[TEnd]:
-            return filter(func, previous_step)
-
-        return self.flat_map(new_action)
+        return self.then(filter_op(func))
 
     def map(  # noqa: A003
         self, func: Callable[[TEnd], TOther]
@@ -141,12 +90,7 @@ class Chain(Generic[TStart, TEnd]):
         """
         Return a single transformed element from each input element.
         """
-
-        @functools.wraps(func)
-        def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
-            return map(func, previous_step)
-
-        return self.flat_map(new_action)
+        return self.then(one2one_op(func))
 
     def batched_map(
         self, func: Callable[[Tuple[TEnd, ...]], TOther], n: Optional[int] = None
@@ -157,13 +101,7 @@ class Chain(Generic[TStart, TEnd]):
         If n is None, then apply the function to all the elements, and return
         an iterator of 1 element.
         """
-
-        @functools.wraps(func)
-        def new_action(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
-            for elements in batched(previous_step, n):
-                yield func(elements)
-
-        return self.flat_map(new_action)
+        return self.then(batched_op(func, n))
 
     def get_counts(self) -> List[Dict[str, Any]]:
         step_counts = []

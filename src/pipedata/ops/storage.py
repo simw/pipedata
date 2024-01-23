@@ -1,12 +1,20 @@
+import itertools
 import logging
-from typing import Any, Callable, Dict, Iterator, Optional
+from typing import Any, Callable, Dict, Iterator, Optional, Tuple, TypeVar
 
 import pyarrow as pa  # type: ignore
 import pyarrow.parquet as pq  # type: ignore
 
-from pipedata.core.chain import batched
+T = TypeVar("T")
+
 
 logger = logging.getLogger(__name__)
+
+
+def _batched(iterable: Iterator[T], n: Optional[int]) -> Iterator[Tuple[T, ...]]:
+    """Can be replaced by itertools.batched once using Python 3.12+."""
+    while (elements := tuple(itertools.islice(iterable, n))) != ():
+        yield elements
 
 
 def parquet_writer(
@@ -32,7 +40,7 @@ def parquet_writer(
         writer = None
         file_number = 1
         file_length = 0
-        for batch in batched(records, row_group_length):
+        for batch in _batched(records, row_group_length):
             table = pa.Table.from_pylist(batch, schema=schema)
             if writer is None:
                 formated_file_path = file_path
