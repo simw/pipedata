@@ -13,7 +13,7 @@ def test_json_records() -> None:
     file1 = io.BytesIO(json.dumps(json1).encode("utf-8"))
     file2 = io.BytesIO(json.dumps(json2).encode("utf-8"))
 
-    result = Stream([file1, file2]).flat_map(json_records()).to_list()
+    result = Stream([file1, file2]).then(json_records()).to_list()
     expected = json1 + json2
     assert result == expected
 
@@ -30,7 +30,7 @@ def test_json_records_from_file_ref() -> None:
         OpenedFileRef(name="test2.json", contents=file2),
     ]
 
-    result = Stream(file_refs).flat_map(json_records()).to_list()
+    result = Stream(file_refs).then(json_records()).to_list()
     expected = json1 + json2
     assert result == expected
 
@@ -42,7 +42,7 @@ def test_csv_records() -> None:
     file1 = io.BytesIO(csv1.encode("utf-8"))
     file2 = io.BytesIO(csv2.encode("utf-8"))
 
-    result = Stream([file1, file2]).flat_map(csv_records()).to_list()
+    result = Stream([file1, file2]).then(csv_records()).to_list()
     expected = [
         {"a": "1", "b": "2"},
         {"a": "3", "b": "4"},
@@ -64,7 +64,7 @@ def test_csv_records_from_file_ref() -> None:
         OpenedFileRef(name="test2.csv", contents=file2),
     ]
 
-    result = Stream(file_refs).flat_map(csv_records()).to_list()
+    result = Stream(file_refs).then(csv_records()).to_list()
     expected = [
         {"a": "1", "b": "2"},
         {"a": "3", "b": "4"},

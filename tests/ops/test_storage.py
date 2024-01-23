@@ -20,7 +20,7 @@ def test_parquet_simple_storage() -> None:
         temp_path = Path(tmpdir)
         output_path = temp_path / "test.parquet"
 
-        result = Stream(items).flat_map(parquet_writer(str(output_path))).to_list()
+        result = Stream(items).then(parquet_writer(str(output_path))).to_list()
 
         assert result == [str(output_path)]
 
@@ -48,7 +48,7 @@ def test_parquet_batched_storage() -> None:
 
         result = (
             Stream(items)
-            .flat_map(parquet_writer(str(output_path), row_group_length=2))
+            .then(parquet_writer(str(output_path), row_group_length=2))
             .to_list()
         )
 
@@ -78,7 +78,7 @@ def test_parquet_multiple_files() -> None:
 
         result = (
             Stream(items)
-            .flat_map(parquet_writer(str(output_path), max_file_length=2))
+            .then(parquet_writer(str(output_path), max_file_length=2))
             .to_list()
         )
 

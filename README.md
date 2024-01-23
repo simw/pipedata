@@ -47,9 +47,9 @@ with zipfile.ZipFile("test_input.json.zip", "w") as zipped:
 
 result = (
     Stream(["test_input.json.zip"])
-    .flat_map(zipped_files)
-    .flat_map(json_records())
-    .flat_map(parquet_writer("test_output.parquet"))
+    .then(zipped_files)
+    .then(json_records())
+    .then(parquet_writer("test_output.parquet"))
     .to_list()
 )
 
@@ -69,11 +69,11 @@ from pipedata.ops import json_records, parquet_writer, zipped_files
 # Running this after input file created in above example
 chain = (
     Chain()
-    .flat_map(zipped_files)
-    .flat_map(json_records())
-    .flat_map(parquet_writer("test_output_2.parquet"))
+    .then(zipped_files)
+    .then(json_records())
+    .then(parquet_writer("test_output_2.parquet"))
 )
-result = Stream(["test_input.json.zip"]).flat_map(chain).to_list()
+result = Stream(["test_input.json.zip"]).then(chain).to_list()
 table = pq.read_table("test_output_2.parquet")
 print(table.to_pydict())
 #> {'col1': [1, 2, 3], 'col2': ['Hello', 'world', '!']}
@@ -86,33 +86,34 @@ The core framework provides the building blocks for chaining operations.
 
 Running a stream:
 ```py
-from pipedata.core import Stream
+from pipedata.core import Stream, ops
 
 
 result = (
     Stream(range(10))
-    .filter(lambda x: x % 2 == 0)
-    .map(lambda x: x ^ 2)
-    .batched_map(lambda x: x, 2)
+    .then(ops.filtering(lambda x: x % 2 == 0))
+    .then(ops.mapping(lambda x: x ^ 2))
+    .then(ops.batching(lambda x: x, 2))
     .to_list()
 )
 print(result)
 #> [(2, 0), (6, 4), (10,)]
 ```
 
-Creating a chain and then using it:
+Creating a chain and then using it, this time using the
+pipe notation:
 ```py
 import json
-from pipedata.core import Chain, Stream, Stream
+from pipedata.core import Chain, Stream, ops
 
 
 chain = (
     Chain()
-    .filter(lambda x: x % 2 == 0)
-    .map(lambda x: x ^ 2)
-    .batched_map(lambda x: sum(x), 2)
+    | ops.filtering(lambda x: x % 2 == 0)
+    | ops.mapping(lambda x: x ^ 2)
+    | ops.batching(lambda x: sum(x), 2)
 )
-print(Stream(range(10), chain).to_list())
+print(Stream(range(10)).then(chain).to_list())
 #> [2, 10, 10]
 print(json.dumps(chain.get_counts(), indent=4))
 #> [
@@ -137,8 +138,6 @@ print(json.dumps(chain.get_counts(), indent=4))
 #>         "outputs": 3
 #>     }
 #> ]
-print(Stream(range(10)).flat_map(chain).to_list())
-#> [2, 10, 10]
 ```
 
 ## Similar Functionality

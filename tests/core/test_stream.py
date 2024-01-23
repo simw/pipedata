@@ -45,7 +45,7 @@ def test_stream_with_a_chain() -> None:
     # TODO: what to do with mypy and lambda functions
     chain = Chain[int]().then(ops.filtering(lambda x: x % 2 == 0))  # type: ignore
 
-    result = Stream([0, 1, 2, 3]).flat_map(chain).to_list()
+    result = Stream([0, 1, 2, 3]).then(chain).to_list()
     assert result == [0, 2]
 
 
@@ -60,34 +60,37 @@ def test_stream_to_list_longer_length() -> None:
 
 
 def test_stream_filter() -> None:
+    @ops.filtering
     def is_even(value: int) -> bool:
         return value % 2 == 0
 
-    result = Stream([0, 1, 2, 3, 4, 5]).filter(is_even).to_list()
+    result = Stream([0, 1, 2, 3, 4, 5]).then(is_even).to_list()
     assert result == [0, 2, 4]
 
 
 def test_stream_filter_with_range() -> None:
+    @ops.filtering
     def is_even(value: int) -> bool:
         return value % 2 == 0
 
-    result = Stream(range(10)).filter(is_even).to_list()
+    result = Stream(range(10)).then(is_even).to_list()
     assert result == [0, 2, 4, 6, 8]
 
 
 def test_stream_filter_with_none_passing() -> None:
+    @ops.filtering
     def is_even(value: int) -> bool:
         return value % 2 == 0
 
-    result = Stream([1, 3, 5]).filter(is_even).to_list()
+    result = Stream([1, 3, 5]).then(is_even).to_list()
     assert result == []
 
 
-def test_stream_flat_map_identity() -> None:
+def test_stream_then_identity() -> None:
     def identity(input_iterator: Iterator[int]) -> Iterator[int]:
         yield from input_iterator
 
-    result = Stream([0, 1, 2, 3]).flat_map(identity).to_list()
+    result = Stream([0, 1, 2, 3]).then(identity).to_list()
     assert result == [0, 1, 2, 3]
 
 
@@ -96,9 +99,9 @@ def test_stream_then_chain() -> None:
         for element in input_iterator:
             yield element + 1
 
-    def multiply_two(input_iterator: Iterator[int]) -> Iterator[int]:
-        for element in input_iterator:
-            yield element * 2
+    @ops.mapping
+    def multiply_two(value: int) -> int:
+        return value * 2
 
     result = Stream([0, 1, 2, 3]).then(add_one).then(multiply_two).to_list()
     assert result == [2, 4, 6, 8]
@@ -124,7 +127,7 @@ def test_stream_flat_map_growing() -> None:
             yield element
             yield element + 1
 
-    result = Stream([0, 1, 2, 3]).flat_map(add_element).to_list()
+    result = Stream([0, 1, 2, 3]).then(add_element).to_list()
     assert result == [0, 1, 1, 2, 2, 3, 3, 4]
 
 
@@ -133,15 +136,16 @@ def test_stream_flat_map_shrinking() -> None:
         while batch := tuple(islice(input_iterator, 2)):
             yield sum(batch)
 
-    result = Stream([0, 1, 2, 3, 4]).flat_map(add_two_values).to_list()
+    result = Stream([0, 1, 2, 3, 4]).then(add_two_values).to_list()
     assert result == [1, 5, 4]
 
 
 def test_stream_map() -> None:
+    @ops.mapping
     def add_one(value: int) -> int:
         return value + 1
 
-    result = Stream([0, 1, 2, 3]).map(add_one).to_list()
+    result = Stream([0, 1, 2, 3]).then(add_one).to_list()
     assert result == [1, 2, 3, 4]
 
 
@@ -164,9 +168,9 @@ def test_stream_reduce_appending() -> None:
     assert result == [0, 1, 2, 3]
 
 
-def test_stream_batched_map() -> None:
+def test_stream_batching() -> None:
     def add_values(values: Iterable[int]) -> int:
         return sum(values)
 
-    result = Stream([0, 1, 2, 3, 4]).batched_map(add_values, 2).to_list()
+    result = Stream([0, 1, 2, 3, 4]).then(ops.batching(add_values, 2)).to_list()
     assert result == [1, 5, 4]
