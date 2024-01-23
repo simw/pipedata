@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pyarrow.parquet as pq  # type: ignore
 
-from pipedata.core import StreamStart
+from pipedata.core import Stream, ops
 from pipedata.ops import json_records, parquet_writer, zipped_files
 
 
@@ -33,11 +33,11 @@ def test_zipped_files() -> None:
             zip_file.writestr("test3.txt", json.dumps(data3))
 
         result = (
-            StreamStart([str(zip_path)])
-            .flat_map(zipped_files)
-            .map(lambda x: x.contents)
-            .flat_map(json_records())
-            .flat_map(parquet_writer(str(output_path)))
+            Stream([str(zip_path)])
+            .then(zipped_files)
+            .then(ops.mapping(lambda x: x.contents))  # type: ignore  # TODO
+            .then(json_records())
+            .then(parquet_writer(str(output_path)))
             .to_list()
         )
 
