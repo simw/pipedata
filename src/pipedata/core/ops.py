@@ -46,3 +46,37 @@ class batched(ChainLink[TEnd, TOther]):  # noqa: N801
             return (func(elements) for elements in _batched(previous_step, n))
 
         super().__init__(new_action)
+
+
+class chain_iterables(ChainLink[Iterator[TEnd], TEnd]):  # noqa: N801
+    def __init__(self) -> None:
+        def chain_iterables_(previous_step: Iterator[Iterator[TEnd]]) -> Iterator[TEnd]:
+            return itertools.chain.from_iterable(previous_step)
+
+        super().__init__(chain_iterables_)
+
+
+class grouper(ChainLink[TEnd, list[TEnd]]):  # noqa: N801
+    def __init__(
+        self,
+        *,
+        starter: Optional[Callable[[TEnd], bool]] = None,
+        ender: Optional[Callable[[TEnd], bool]] = None,
+    ) -> None:
+        def grouper_(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
+            group: list[TEnd] = []
+            for element in previous_step:
+                if starter is not None and starter(element) and len(group) > 0:
+                    yield group
+                    group = [element]
+                elif ender is not None and ender(element):
+                    group.append(element)
+                    yield group
+                    group = []
+                else:
+                    group.append(element)
+
+            if len(group) > 0:
+                yield group
+
+        super().__init__(grouper_)

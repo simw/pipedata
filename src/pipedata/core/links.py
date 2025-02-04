@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import (
     Callable,
     Generic,
@@ -23,7 +24,8 @@ class CountingIterator(Iterator[TStart]):
     def __next__(self) -> TStart:
         self._count += 1
         try:
-            return next(self._iterator)
+            next_value = next(self._iterator)
+            return next_value
         except StopIteration as err:
             self._count -= 1
             raise StopIteration from err
@@ -45,9 +47,10 @@ class ChainLink(Generic[TStart, TEnd]):
     def __name__(self) -> str:  # noqa: A003
         return self._func.__name__
 
-    def __call__(self, input_iterator: Iterator[TStart]) -> Iterator[TEnd]:
+    def __call__(self, input_iterator: Iterator[TStart]) -> CountingIterator[TEnd]:
         self._input = CountingIterator(input_iterator)
-        self._output = CountingIterator(self._func(self._input))
+        result = self._func(self._input)
+        self._output = CountingIterator(result)
         return self._output
 
     def get_counts(self) -> Tuple[int, int]:

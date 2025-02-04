@@ -226,3 +226,43 @@ def test_chain_batched_map() -> None:
             "outputs": 3,
         },
     ]
+
+
+def test_chain_iterables() -> None:
+    chain = Chain[int]().then(ops.chain_iterables())
+    result = list(chain(iter([iter([0, 1]), iter([2, 3])])))
+    assert result == [0, 1, 2, 3]
+    assert chain.get_counts() == [
+        {
+            "name": "_identity",
+            "inputs": 2,
+            "outputs": 2,
+        },
+        {
+            "name": "chain_iterables_",
+            "inputs": 2,
+            "outputs": 4,
+        },
+    ]
+
+
+def test_chain_grouper() -> None:
+    chain = (
+        Chain[int]()
+        .then(ops.grouper(starter=lambda x: x == 1, ender=lambda x: x == 3))
+    )
+    inputs = [1, 2, 3, 4, 1, 2, 3, 4]
+    result = list(chain(iter(inputs)))
+    assert result == [[1, 2, 3], [4], [1, 2, 3], [4]]
+    assert chain.get_counts() == [
+        {
+            "name": "_identity",
+            "inputs": 8,
+            "outputs": 8,
+        },
+        {
+            "name": "grouper_",
+            "inputs": 8,
+            "outputs": 4,
+        },
+    ]
