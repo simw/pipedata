@@ -27,7 +27,7 @@ jobs:
     - uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
-    - run: curl -sSL https://install.python-poetry.org | python - -y
+    - run: curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.4 python - -y
     - run: poetry config virtualenvs.in-project true
     - run: make test
     - run: make test-dep-versions
