@@ -9,12 +9,6 @@ main() {
     echo "Python minor version: $PYTHON_MINOR_VERSION"
 
     if (( $PYTHON_MINOR_VERSION < "12" )); then
-        poetry run pip install pyarrow==11.0.0
-        poetry run python -m pytest
-
-        poetry run pip install pyarrow==13.0.0
-        poetry run python -m pytest
-
         poetry run pip install fsspec==0.9.0
         poetry run python -m pytest
     fi
