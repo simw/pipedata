@@ -29,9 +29,6 @@ test: prepare
 
 .PHONY: test-python-versions
 test-python-versions:
-	poetry env use python3.8
-	make test
-
 	poetry env use python3.9
 	make test
 
