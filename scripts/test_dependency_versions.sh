@@ -13,7 +13,7 @@ main() {
         poetry run python -m pytest
     fi
 
-	poetry run pip install pyarrow==14.0.0
+	poetry run pip install pyarrow==16.0.0
 	poetry run python -m pytest
 
 	poetry run pip install ijson==3.0.0
