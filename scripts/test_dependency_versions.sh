@@ -8,11 +8,6 @@ main() {
     PYTHON_MINOR_VERSION=$(poetry run python -c 'import sys; version=sys.version_info[:3]; print("{1}".format(*version))')
     echo "Python minor version: $PYTHON_MINOR_VERSION"
 
-    if (( $PYTHON_MINOR_VERSION < "12" )); then
-        poetry run pip install fsspec==0.9.0
-        poetry run python -m pytest
-    fi
-
     if (( $PYTHON_MINOR_VERSION < "13" )); then
         poetry run pip install pyarrow==16.0.0
         poetry run python -m pytest
