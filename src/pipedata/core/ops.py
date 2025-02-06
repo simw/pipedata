@@ -63,7 +63,7 @@ class grouper(ChainLink[TEnd, list[TEnd]]):  # noqa: N801
         starter: Optional[Callable[[TEnd], bool]] = None,
         ender: Optional[Callable[[TEnd], bool]] = None,
     ) -> None:
-        def grouper_(previous_step: Iterator[TEnd]) -> Iterator[TOther]:
+        def grouper_(previous_step: Iterator[TEnd]) -> Iterator[list[TEnd]]:
             group: list[TEnd] = []
             for element in previous_step:
                 if starter is not None and starter(element) and len(group) > 0:

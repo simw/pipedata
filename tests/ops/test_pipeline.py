@@ -66,6 +66,7 @@ def test_zipped_file_contents() -> None:
     </xml>
     """
 
+    # Note: can't do type checking with lambdas
     with tempfile.TemporaryDirectory() as temp_dir:
         zip_path = Path(temp_dir) / "test.zip"
 
@@ -76,17 +77,17 @@ def test_zipped_file_contents() -> None:
 
         extract_xmls = (
             Chain()
-            .then(ops.grouper(starter=lambda line: line.strip().startswith(b"<xml")))
-            .then(ops.mapping(lambda x: b"\n".join(x)))
-            .then(ops.filtering(lambda x: x.strip() != b""))
+            .then(ops.grouper(starter=lambda line: line.strip().startswith(b"<xml")))  # type: ignore
+            .then(ops.mapping(lambda x: b"\n".join(x)))  # type: ignore
+            .then(ops.filtering(lambda x: x.strip() != b""))  # type: ignore
         )
 
         result = (
             Stream([str(zip_path)])
             .then(zipped_files)
-            .then(ops.mapping(lambda x: x.contents))
+            .then(ops.mapping(lambda x: x.contents))  # type: ignore
             .then(ops.chain_iterables())
             .then(extract_xmls)
             .to_list()
         )
-        assert len(result) == 6
+        assert len(result) == 6  # noqa: PLR2004

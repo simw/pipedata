@@ -229,8 +229,10 @@ def test_chain_batched_map() -> None:
 
 
 def test_chain_iterables() -> None:
-    chain = Chain[int]().then(ops.chain_iterables())
-    result = list(chain(iter([iter([0, 1]), iter([2, 3])])))
+    # TODO: make typing work with chain_iterables
+    chain = Chain[int]().then(ops.chain_iterables())  # type: ignore
+    inputs = iter([iter([0, 1]), iter([2, 3])])
+    result = list(chain(inputs))  # type: ignore
     assert result == [0, 1, 2, 3]
     assert chain.get_counts() == [
         {
@@ -247,10 +249,13 @@ def test_chain_iterables() -> None:
 
 
 def test_chain_grouper() -> None:
-    chain = (
-        Chain[int]()
-        .then(ops.grouper(starter=lambda x: x == 1, ender=lambda x: x == 3))
-    )
+    def is_one(val: int) -> bool:
+        return val == 1
+
+    def is_three(val: int) -> bool:
+        return val == 3  # noqa: PLR2004
+
+    chain = Chain[int]().then(ops.grouper(starter=is_one, ender=is_three))
     inputs = [1, 2, 3, 4, 1, 2, 3, 4]
     result = list(chain(iter(inputs)))
     assert result == [[1, 2, 3], [4], [1, 2, 3], [4]]
@@ -264,5 +269,27 @@ def test_chain_grouper() -> None:
             "name": "grouper_",
             "inputs": 8,
             "outputs": 4,
+        },
+    ]
+
+
+def test_chain_grouper_no_end() -> None:
+    def is_four(val: int) -> bool:
+        return val == 4  # noqa: PLR2004
+
+    chain = Chain[int]().then(ops.grouper(ender=is_four))
+    inputs = [1, 2, 3, 4, 1, 2, 3, 4]
+    result = list(chain(iter(inputs)))
+    assert result == [[1, 2, 3, 4], [1, 2, 3, 4]]
+    assert chain.get_counts() == [
+        {
+            "name": "_identity",
+            "inputs": 8,
+            "outputs": 8,
+        },
+        {
+            "name": "grouper_",
+            "inputs": 8,
+            "outputs": 2,
         },
     ]
