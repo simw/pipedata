@@ -50,7 +50,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Bootstrap poetry
-      run: curl -sSL https://install.python-poetry.org | python - -y
+      run: curl -sSL https://install.python-poetry.org | POETRY_VERSION=1.8.4 python - -y
 
     - name: Configure poetry
       run: poetry config virtualenvs.in-project true
